@@ -4,128 +4,96 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const TELEGRAM_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
-
 const bot = new TelegramBot(TELEGRAM_TOKEN);
 
-function normalizeTeams(team1, team2) {
-  return [team1.toLowerCase(), team2.toLowerCase()].sort().join(' vs ');
-}
+console.log("Bot started...");
 
 async function scrapeForebet() {
   try {
-    const url = 'https://www.forebet.com/en/football-tips-and-predictions-for-today';
-    const { data } = await axios.get(url);
-    const $ = cheerio.load(data);
+    const { data } = await axios.get('https://www.forebet.com/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0 Safari/537.36'
+      }
+    });
 
+    const $ = cheerio.load(data);
     const matches = [];
 
-    $('.bet-tips-wrap').each((i, el) => {
-      const teams = $(el).find('.bet-tips-team').map((i, e) => $(e).text().trim()).get();
-      const prediction = $(el).find('.bet-tips-prediction').text().trim();
+    $('.rcnt tr').each((_, el) => {
+      const teams = $(el).find('td.tnms').text().trim().replace(/\s+/g, ' ');
+      const tip = $(el).find('td.profit div').first().text().trim();
 
-      if (teams.length === 2 && prediction) {
-        matches.push({
-          source: 'Forebet',
-          teams,
-          prediction,
-          key: normalizeTeams(teams[0], teams[1])
-        });
+      if (teams && tip) {
+        matches.push({ teams, tip });
       }
     });
 
     return matches;
-  } catch (error) {
-    console.error('Error scraping Forebet:', error.message);
+  } catch (err) {
+    console.error('Error scraping Forebet:', err.message);
     return [];
   }
 }
 
 async function scrapePassionPrediction() {
   try {
-    const url = 'https://www.passionprediction.com/';
-    const { data } = await axios.get(url);
-    const $ = cheerio.load(data);
+    const { data } = await axios.get('https://passionpredict.com/');
 
+    const $ = cheerio.load(data);
     const matches = [];
 
-    $('.list-group-item').each((i, el) => {
-      const teamsText = $(el).find('h3').text().trim();
-      const teams = teamsText.split(' vs ').map(t => t.trim());
-      const prediction = $(el).find('.prediction').text().trim();
+    $('table tbody tr').each((_, el) => {
+      const teams = $(el).find('td').eq(0).text().trim();
+      const tip = $(el).find('td').eq(1).text().trim();
 
-      if (teams.length === 2 && prediction) {
-        matches.push({
-          source: 'PassionPrediction',
-          teams,
-          prediction,
-          key: normalizeTeams(teams[0], teams[1])
-        });
+      if (teams && tip) {
+        matches.push({ teams, tip });
       }
     });
 
     return matches;
-  } catch (error) {
-    console.error('Error scraping PassionPrediction:', error.message);
+  } catch (err) {
+    console.error('Error scraping PassionPrediction:', err.message);
     return [];
   }
 }
 
-function partialMatch(pred1, pred2) {
-  pred1 = pred1.toLowerCase();
-  pred2 = pred2.toLowerCase();
-
-  if (pred1 === pred2) return true;
-
-  if (pred1.includes('btts') && pred2.includes('both teams')) return true;
-  if (pred2.includes('btts') && pred1.includes('both teams')) return true;
-
-  if (pred1.includes('over') && pred2.includes('over')) return true;
-  if (pred1.includes('under') && pred2.includes('under')) return true;
-
-  if (pred1.includes('draw') && pred2.includes('draw')) return true;
-
-  return false;
-}
-
 async function main() {
-  console.log('Running scraping cycle at', new Date().toLocaleString());
+  console.log("Running scraping cycle at", new Date().toLocaleString());
 
-  const forebetMatches = await scrapeForebet();
-  const passionMatches = await scrapePassionPrediction();
+  const [forebet, passion] = await Promise.all([
+    scrapeForebet(),
+    scrapePassionPrediction()
+  ]);
 
-  const forebetMap = new Map();
-  for (const m of forebetMatches) {
-    forebetMap.set(m.key, m);
-  }
+  // Cross check matches from both
+  const repeatedTips = [];
 
-  const matchedPredictions = [];
-
-  for (const pm of passionMatches) {
-    if (forebetMap.has(pm.key)) {
-      const fm = forebetMap.get(pm.key);
-      if (partialMatch(fm.prediction, pm.prediction)) {
-        matchedPredictions.push({
-          teams: fm.teams,
-          prediction: fm.prediction,
+  forebet.forEach(fbMatch => {
+    passion.forEach(psMatch => {
+      if (fbMatch.teams.toLowerCase() === psMatch.teams.toLowerCase() &&
+          fbMatch.tip.toLowerCase() === psMatch.tip.toLowerCase()) {
+        repeatedTips.push({
+          teams: fbMatch.teams,
+          tip: fbMatch.tip,
           sources: ['Forebet', 'PassionPrediction']
         });
       }
-    }
-  }
+    });
+  });
 
-  if (matchedPredictions.length === 0) {
-    console.log('Hakuna mechi zinazojirudia.');
+  if (repeatedTips.length === 0) {
+    console.log("Hakuna mechi zinazojirudia.");
     return;
   }
 
-  for (const match of matchedPredictions) {
-    const message = `[Matched Prediction]\n${match.teams.join(' vs ')}\nPrediction: ${match.prediction}\nSources: ${match.sources.join(', ')}`;
-    await bot.sendMessage(CHAT_ID, message);
-    console.log('Sent:', message);
-    await new Promise(r => setTimeout(r, 1000)); // Avoid spamming too fast
+  for (const match of repeatedTips) {
+    const msg = `**Mechi:** ${match.teams}\n**Tip:** ${match.tip}\n**Sources:** ${match.sources.join(', ')}`;
+    await bot.sendMessage(CHAT_ID, msg, { parse_mode: 'Markdown' });
+    console.log("Sent:", msg);
   }
 }
 
-// Run immediately, then repeat every 1 minute
+// Run mara moja, kisha kila dakika 10
 main();
-setInterval(main, 60 * 1000);
+setInterval(main, 10 * 60 * 1000);
