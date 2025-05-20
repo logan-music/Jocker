@@ -17,7 +17,6 @@ async function scrapePassionPredict() {
     $('table tbody tr').each((_, el) => {
       const teams = $(el).find('td').eq(0).text().trim();
       const tip = $(el).find('td').eq(1).text().trim();
-
       if (teams && tip) {
         matches.push({ teams, tip, source: 'PassionPredict' });
       }
@@ -32,7 +31,7 @@ async function scrapePassionPredict() {
 
 async function scrapeBetGenuine() {
   try {
-    const { data } = await axios.get('https://betgenuine.com/today-predictions/');
+    const { data } = await axios.get('https://betgenuine.com/');
     const $ = cheerio.load(data);
     const matches = [];
 
@@ -61,7 +60,6 @@ async function scrapeLegitPredict() {
     $('table tbody tr').each((_, el) => {
       const teams = $(el).find('td').eq(0).text().trim();
       const tip = $(el).find('td').eq(1).text().trim();
-
       if (teams && tip) {
         matches.push({ teams, tip, source: 'LegitPredict' });
       }
@@ -76,7 +74,11 @@ async function scrapeLegitPredict() {
 
 async function scrapeWindrawwin() {
   try {
-    const { data } = await axios.get('https://www.windrawwin.com/predictions/today/');
+    const { data } = await axios.get('https://www.windrawwin.com/predictions/today/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0 Safari/537.36'
+      }
+    });
     const $ = cheerio.load(data);
     const matches = [];
 
@@ -115,12 +117,12 @@ async function main() {
 
   for (const match of allMatches) {
     const key = normalizeText(match.teams + match.tip);
-
     if (!grouped[key]) {
       grouped[key] = { teams: match.teams, tip: match.tip, sources: [] };
     }
-
-    grouped[key].sources.push(match.source);
+    if (!grouped[key].sources.includes(match.source)) {
+      grouped[key].sources.push(match.source);
+    }
   }
 
   const repeatedTips = Object.values(grouped).filter(m => m.sources.length >= 2);
@@ -137,6 +139,6 @@ async function main() {
   }
 }
 
-// Run once, then repeat every 10 minutes
+// Run now and every 10 minutes
 main();
 setInterval(main, 10 * 60 * 1000);
