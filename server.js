@@ -8,37 +8,9 @@ const bot = new TelegramBot(TELEGRAM_TOKEN);
 
 console.log("Bot started...");
 
-async function scrapeForebet() {
-  try {
-    const { data } = await axios.get('https://www.forebet.com/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0 Safari/537.36'
-      }
-    });
-
-    const $ = cheerio.load(data);
-    const matches = [];
-
-    $('.rcnt tr').each((_, el) => {
-      const teams = $(el).find('td.tnms').text().trim().replace(/\s+/g, ' ');
-      const tip = $(el).find('td.profit div').first().text().trim();
-
-      if (teams && tip) {
-        matches.push({ teams, tip });
-      }
-    });
-
-    return matches;
-  } catch (err) {
-    console.error('Error scraping Forebet:', err.message);
-    return [];
-  }
-}
-
-async function scrapePassionPrediction() {
+async function scrapePassionPredict() {
   try {
     const { data } = await axios.get('https://passionpredict.com/');
-
     const $ = cheerio.load(data);
     const matches = [];
 
@@ -47,40 +19,111 @@ async function scrapePassionPrediction() {
       const tip = $(el).find('td').eq(1).text().trim();
 
       if (teams && tip) {
-        matches.push({ teams, tip });
+        matches.push({ teams, tip, source: 'PassionPredict' });
       }
     });
 
     return matches;
   } catch (err) {
-    console.error('Error scraping PassionPrediction:', err.message);
+    console.error('Error scraping PassionPredict:', err.message);
     return [];
   }
+}
+
+async function scrapeBetGenuine() {
+  try {
+    const { data } = await axios.get('https://betgenuine.com/today-predictions/');
+    const $ = cheerio.load(data);
+    const matches = [];
+
+    $('.match-card').each((_, el) => {
+      const teams = $(el).find('.match-title').text().trim();
+      const tip = $(el).find('.match-tip').text().trim();
+
+      if (teams && tip) {
+        matches.push({ teams, tip, source: 'BetGenuine' });
+      }
+    });
+
+    return matches;
+  } catch (err) {
+    console.error('Error scraping BetGenuine:', err.message);
+    return [];
+  }
+}
+
+async function scrapeLegitPredict() {
+  try {
+    const { data } = await axios.get('https://legitpredict.com/');
+    const $ = cheerio.load(data);
+    const matches = [];
+
+    $('table tbody tr').each((_, el) => {
+      const teams = $(el).find('td').eq(0).text().trim();
+      const tip = $(el).find('td').eq(1).text().trim();
+
+      if (teams && tip) {
+        matches.push({ teams, tip, source: 'LegitPredict' });
+      }
+    });
+
+    return matches;
+  } catch (err) {
+    console.error('Error scraping LegitPredict:', err.message);
+    return [];
+  }
+}
+
+async function scrapeWindrawwin() {
+  try {
+    const { data } = await axios.get('https://www.windrawwin.com/predictions/today/');
+    const $ = cheerio.load(data);
+    const matches = [];
+
+    $('table tr').each((_, el) => {
+      const teams = $(el).find('td').eq(0).text().trim().replace(/\s{2,}/g, ' ');
+      const tip = $(el).find('td').eq(3).text().trim();
+
+      if (teams && tip && teams.includes(' v ')) {
+        matches.push({ teams, tip, source: 'Windrawwin' });
+      }
+    });
+
+    return matches;
+  } catch (err) {
+    console.error('Error scraping Windrawwin:', err.message);
+    return [];
+  }
+}
+
+function normalizeText(text) {
+  return text.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
 }
 
 async function main() {
   console.log("Running scraping cycle at", new Date().toLocaleString());
 
-  const [forebet, passion] = await Promise.all([
-    scrapeForebet(),
-    scrapePassionPrediction()
+  const results = await Promise.all([
+    scrapePassionPredict(),
+    scrapeBetGenuine(),
+    scrapeLegitPredict(),
+    scrapeWindrawwin()
   ]);
 
-  // Cross check matches from both
-  const repeatedTips = [];
+  const allMatches = results.flat();
+  const grouped = {};
 
-  forebet.forEach(fbMatch => {
-    passion.forEach(psMatch => {
-      if (fbMatch.teams.toLowerCase() === psMatch.teams.toLowerCase() &&
-          fbMatch.tip.toLowerCase() === psMatch.tip.toLowerCase()) {
-        repeatedTips.push({
-          teams: fbMatch.teams,
-          tip: fbMatch.tip,
-          sources: ['Forebet', 'PassionPrediction']
-        });
-      }
-    });
-  });
+  for (const match of allMatches) {
+    const key = normalizeText(match.teams + match.tip);
+
+    if (!grouped[key]) {
+      grouped[key] = { teams: match.teams, tip: match.tip, sources: [] };
+    }
+
+    grouped[key].sources.push(match.source);
+  }
+
+  const repeatedTips = Object.values(grouped).filter(m => m.sources.length >= 2);
 
   if (repeatedTips.length === 0) {
     console.log("Hakuna mechi zinazojirudia.");
@@ -94,6 +137,6 @@ async function main() {
   }
 }
 
-// Run mara moja, kisha kila dakika 10
+// Run once, then repeat every 10 minutes
 main();
 setInterval(main, 10 * 60 * 1000);
