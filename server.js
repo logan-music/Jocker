@@ -1,36 +1,90 @@
-// betting-bot/server.js const axios = require("axios"); const cheerio = require("cheerio"); const express = require("express");
+const axios = require('axios');
+const cheerio = require('cheerio');
 
-const BOT_TOKEN = "your_bot_token_here"; const CHAT_ID = "your_chat_id_here"; const TELEGRAM_API = https://api.telegram.org/bot${BOT_TOKEN}/sendMessage;
+// Telegram Bot Credentials (weka zako mwenyewe)
+const BOT_TOKEN = 'YOUR_BOT_TOKEN';
+const CHAT_ID = 'YOUR_CHAT_ID';
 
-const sources = [ scrapePassionPredict, scrapeLegitPredict, scrapeBetGenuine, scrapeBettingVoice, scrapeGoodSport, scrapeBankerPredict, scrapeFocusPredict, scrapeSupaTips, ];
+// Utility: Tuma ujumbe Telegram
+async function sendTelegramMessage(message) {
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+  await axios.post(url, {
+    chat_id: CHAT_ID,
+    text: message,
+    parse_mode: 'Markdown'
+  });
+}
 
-async function scrapePassionPredict() { try { const res = await axios.get("https://www.passionpredict.com/"); const $ = cheerio.load(res.data); const tips = []; $(".match_card").each((i, el) => { const match = $(el).find(".match_title").text().trim(); const tip = $(el).find(".match_tip").text().trim(); if (match && tip) tips.push({ match, tip }); }); return { source: "PassionPredict", tips }; } catch (err) { console.error("Error scraping PassionPredict:", err.message); return { source: "PassionPredict", tips: [] }; } }
+// Scraper Functions
+async function scrapeSite(name, url, selector, extractFunc) {
+  try {
+    const res = await axios.get(url);
+    const $ = cheerio.load(res.data);
+    const tips = [];
 
-async function scrapeLegitPredict() { try { const res = await axios.get("https://legitpredict.com/"); const $ = cheerio.load(res.data); const tips = []; $(".match-card").each((i, el) => { const match = $(el).find(".teams").text().trim(); const tip = $(el).find(".tip").text().trim(); if (match && tip) tips.push({ match, tip }); }); return { source: "LegitPredict", tips }; } catch (err) { console.error("Error scraping LegitPredict:", err.message); return { source: "LegitPredict", tips: [] }; } }
+    $(selector).each((i, el) => {
+      const tip = extractFunc($(el));
+      if (tip) tips.push(tip);
+    });
 
-async function scrapeBetGenuine() { try { const res = await axios.get("https://betgenuine.com/"); const $ = cheerio.load(res.data); const tips = []; $(".elementor-post").each((i, el) => { const match = $(el).find(".elementor-post__title").text().trim(); const tip = $(el).find(".entry-summary").text().trim().split("Tip:")[1]; if (match && tip) tips.push({ match, tip: tip.trim() }); }); return { source: "BetGenuine", tips }; } catch (err) { console.error("Error scraping BetGenuine:", err.message); return { source: "BetGenuine", tips: [] }; } }
+    return { source: name, tips };
+  } catch (err) {
+    console.error(`Error scraping ${name}:`, err.message);
+    return { source: name, tips: [] };
+  }
+}
 
-async function scrapeBettingVoice() { try { const res = await axios.get("https://bettingvoice.com/"); const $ = cheerio.load(res.data); const tips = []; $(".elementor-post").each((i, el) => { const match = $(el).find(".elementor-post__title").text().trim(); const tip = $(el).find(".elementor-post__excerpt").text().trim().split("Tip:")[1]; if (match && tip) tips.push({ match, tip: tip.trim() }); }); return { source: "BettingVoice", tips }; } catch (err) { console.error("Error scraping BettingVoice:", err.message); return { source: "BettingVoice", tips: [] }; } }
+// Define All Sites
+async function getAllTips() {
+  return Promise.all([
+    scrapeSite('PassionPredict', 'https://passionpredict.com/', 'div.prediction', el => el.text().trim()),
+    scrapeSite('LegitPredict', 'https://legitpredict.com/', 'div.match-tips', el => el.text().trim()),
+    scrapeSite('BetGenuine', 'https://betgenuine.com/', 'div.tip-card', el => el.text().trim()),
+    scrapeSite('BettingVoice', 'https://bettingvoice.com/', 'div.tip-entry', el => el.text().trim()),
+    scrapeSite('GoodSport', 'https://good-sport.co/', 'div.prediction-item', el => el.text().trim()),
+    scrapeSite('BankerPredict', 'https://bankerpredict.com/', 'div.tip-container', el => el.text().trim()),
+    scrapeSite('FocusPredict', 'https://focuspredict.com/', 'div.game-card', el => el.text().trim()),
+    scrapeSite('SupaTips', 'https://www.supatips.com/', 'div.tip-card', el => el.text().trim())
+  ]);
+}
 
-async function scrapeGoodSport() { try { const res = await axios.get("https://good-sport.co/"); const $ = cheerio.load(res.data); const tips = []; $(".elementor-post").each((i, el) => { const match = $(el).find(".elementor-post__title").text().trim(); const tip = $(el).find(".elementor-post__excerpt").text().trim().split("Tip:")[1]; if (match && tip) tips.push({ match, tip: tip.trim() }); }); return { source: "GoodSport", tips }; } catch (err) { console.error("Error scraping GoodSport:", err.message); return { source: "GoodSport", tips: [] }; } }
+// Compare Tips and Send Alerts
+function findCommonTips(allTips) {
+  const map = {};
+  for (const { source, tips } of allTips) {
+    for (const tip of tips) {
+      const key = tip.toLowerCase();
+      if (!map[key]) map[key] = { tip, sources: [] };
+      map[key].sources.push(source);
+    }
+  }
 
-async function scrapeBankerPredict() { try { const res = await axios.get("https://bankerpredict.com/"); const $ = cheerio.load(res.data); const tips = []; $(".elementor-post").each((i, el) => { const match = $(el).find(".elementor-post__title").text().trim(); const tip = $(el).find(".elementor-post__excerpt").text().trim().split("Tip:")[1]; if (match && tip) tips.push({ match, tip: tip.trim() }); }); return { source: "BankerPredict", tips }; } catch (err) { console.error("Error scraping BankerPredict:", err.message); return { source: "BankerPredict", tips: [] }; } }
+  return Object.values(map).filter(t => t.sources.length > 1);
+}
 
-async function scrapeFocusPredict() { try { const res = await axios.get("https://focuspredict.com/"); const $ = cheerio.load(res.data); const tips = []; $(".elementor-post").each((i, el) => { const match = $(el).find(".elementor-post__title").text().trim(); const tip = $(el).find(".elementor-post__excerpt").text().trim().split("Tip:")[1]; if (match && tip) tips.push({ match, tip: tip.trim() }); }); return { source: "FocusPredict", tips }; } catch (err) { console.error("Error scraping FocusPredict:", err.message); return { source: "FocusPredict", tips: [] }; } }
+// Scheduler
+async function runBot() {
+  console.log('Running scraping cycle at', new Date().toLocaleString());
+  const allTips = await getAllTips();
+  const repeatedTips = findCommonTips(allTips);
 
-async function scrapeSupaTips() { try { const res = await axios.get("https://www.supatips.com/"); const $ = cheerio.load(res.data); const tips = []; $(".elementor-post").each((i, el) => { const match = $(el).find(".elementor-post__title").text().trim(); const tip = $(el).find(".elementor-post__excerpt").text().trim().split("Tip:")[1]; if (match && tip) tips.push({ match, tip: tip.trim() }); }); return { source: "SupaTips", tips }; } catch (err) { console.error("Error scraping SupaTips:", err.message); return { source: "SupaTips", tips: [] }; } }
+  if (repeatedTips.length === 0) {
+    console.log('Hakuna mechi zinazojirudia.');
+    return;
+  }
 
-async function sendTelegram(message) { await axios.post(TELEGRAM_API, { chat_id: CHAT_ID, text: message, parse_mode: "Markdown", }); }
+  for (const item of repeatedTips) {
+    const msg = `**Tip:** ${item.tip}\n**Sources:** ${item.sources.join(', ')}`;
+    await sendTelegramMessage(msg);
+    console.log('Sent:', msg);
+  }
+}
 
-function startServer() { const app = express(); app.get("/", (req, res) => res.send("Bot is alive")); app.listen(3000, () => console.log("Dummy server running on port 3000")); }
+// Dummy Server for Render Uptime
+require('http')
+  .createServer((req, res) => res.end('Bot is running'))
+  .listen(process.env.PORT || 3000, () => console.log('Bot started...'));
 
-async function scrapeAndSend() { console.log("Running scraping cycle at", new Date().toLocaleString()); const allResults = await Promise.all(sources.map((fn) => fn()));
-
-const allTips = {}; allResults.forEach(({ source, tips }) => { tips.forEach(({ match, tip }) => { const key = match + "|" + tip; if (!allTips[key]) allTips[key] = { match, tip, sources: [] }; allTips[key].sources.push(source); }); });
-
-const filtered = Object.values(allTips).filter((x) => x.sources.length >= 2); if (!filtered.length) { console.log("Hakuna mechi zinazojirudia."); return; }
-
-for (const m of filtered) { const message = **Mechi:** ${m.match}\n**Tip:** ${m.tip}\n**Sources:** ${m.sources.join(", ")}; await sendTelegram(message); console.log("Sent:", message); } }
-
-startServer(); scrapeAndSend(); setInterval(scrapeAndSend, 10 * 60 * 1000);
-
+// Run every 10 minutes
+setInterval(runBot, 10 * 60 * 1000);
+runBot();
