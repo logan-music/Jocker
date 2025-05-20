@@ -72,32 +72,6 @@ async function scrapeLegitPredict() {
   }
 }
 
-async function scrapeWindrawwin() {
-  try {
-    const { data } = await axios.get('https://www.windrawwin.com/predictions/today/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0 Safari/537.36'
-      }
-    });
-    const $ = cheerio.load(data);
-    const matches = [];
-
-    $('table tr').each((_, el) => {
-      const teams = $(el).find('td').eq(0).text().trim().replace(/\s{2,}/g, ' ');
-      const tip = $(el).find('td').eq(3).text().trim();
-
-      if (teams && tip && teams.includes(' v ')) {
-        matches.push({ teams, tip, source: 'Windrawwin' });
-      }
-    });
-
-    return matches;
-  } catch (err) {
-    console.error('Error scraping Windrawwin:', err.message);
-    return [];
-  }
-}
-
 function normalizeText(text) {
   return text.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
 }
@@ -108,8 +82,7 @@ async function main() {
   const results = await Promise.all([
     scrapePassionPredict(),
     scrapeBetGenuine(),
-    scrapeLegitPredict(),
-    scrapeWindrawwin()
+    scrapeLegitPredict()
   ]);
 
   const allMatches = results.flat();
