@@ -4,7 +4,7 @@
   "description": "Bot ya kuchukua predictions na kutuma Telegram alerts",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "author": "Logan",
   "license": "MIT",
