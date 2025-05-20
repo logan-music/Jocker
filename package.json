@@ -1,16 +1,14 @@
 {
   "name": "betting-bot",
   "version": "1.0.0",
-  "description": "Bot ya kuchukua predictions na kutuma Telegram alerts",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "author": "Logan",
-  "license": "MIT",
   "dependencies": {
-    "axios": "^1.4.0",
+    "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12",
+    "express": "^4.18.2",
     "node-telegram-bot-api": "^0.61.0"
   }
 }
