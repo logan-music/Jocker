@@ -1,135 +1,28 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+// BetPawa Odds Scraper - Node.js version using Axios and Cookie jar const axios = require("axios"); const tough = require("tough-cookie"); const { wrapper } = require("axios-cookiejar-support");
 
-// Telegram Bot Credentials
-const BOT_TOKEN = 'YOUR_BOT_TOKEN';  // Replace with your token
-const CHAT_ID = 'YOUR_CHAT_ID';      // Replace with your chat ID
+const jar = new tough.CookieJar();
 
-async function sendTelegramMessage(message) {
-  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-  await axios.post(url, {
-    chat_id: CHAT_ID,
-    text: message,
-    parse_mode: 'Markdown'
-  });
-}
+// Paste your latest cookies here const cookies = [ { name: "x-pawa-token", value: "c8206c6dd1f6cdca-9002f4b3ba54fbbf", domain: ".betpawa.co.tz", path: "/" }, { name: "__cf_bm", value: "pdpRSQmaLD7tnluJmTs7uDez_gNHjDCNnrFget_hR6g-1747986371-1.0.1.1-xIfbtalybGdipGuqxP0rG9132NmNQsfzoI28WPPjBPTOjeLVkqtof2oNE1FiTwAO2HhqJBNzWW3_qQhc.5GDzMpPbctmvAhZX4ZXjGbLYxU", domain: ".www.betpawa.co.tz", path: "/" } ];
 
-function formatTip(match, tip) {
-  if (!match || !tip) return null;
-  const m = match.replace(/\s+/g, ' ').trim();
-  const t = tip.replace(/\s+/g, ' ').trim();
-  return `${m} - ${t}`.toLowerCase(); // Normalize for comparison
-}
+(async () => { for (const cookie of cookies) { await jar.setCookie(${cookie.name}=${cookie.value}, "https://www.betpawa.co.tz"); }
 
-async function scrapeSite(name, url, selector, extractFunc) {
-  try {
-    const res = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
+const client = wrapper(axios.create({ jar }));
 
-    const $ = cheerio.load(res.data);
-    const tips = [];
+try { const response = await client.get("https://www.betpawa.co.tz/api/livescore/matches");
 
-    $(selector).each((i, el) => {
-      const tip = extractFunc($(el));
-      if (tip) tips.push(tip);
-    });
+const matches = response.data;
 
-    console.log(`✔️ ${name}: ${tips.length} tips scraped`);
-    return { source: name, tips };
-  } catch (err) {
-    console.error(`❌ Error scraping ${name}:`, err.message);
-    return { source: name, tips: [] };
-  }
-}
+// Filter for matches with odds below 1.50
+const filtered = matches.filter(match => {
+  if (!match.odds) return false;
+  return Object.values(match.odds).some(o => parseFloat(o) < 1.50);
+});
 
-async function getAllTips() {
-  return Promise.all([
-    scrapeSite('PassionPredict', 'https://passionpredict.com/', 'div.match-card', el => {
-      const match = el.find('.fixture').text() || el.find('.teams').text();
-      const tip = el.find('.bet-type').text() || el.find('.prediction').text();
-      return formatTip(match, tip);
-    }),
+console.log("Mechi zenye odds chini ya 1.50:");
+filtered.forEach(match => {
+  console.log(`\n${match.homeTeam} vs ${match.awayTeam}`);
+  console.log("Odds:", match.odds);
+});
 
-    scrapeSite('LegitPredict', 'https://legitpredict.com/', 'div.match-box', el => {
-      const match = el.find('.teams').text();
-      const tip = el.find('.tip').text();
-      return formatTip(match, tip);
-    }),
+} catch (error) { console.error("Error fetching matches:", error.response ? error.response.data : error); } })();
 
-    scrapeSite('BetGenuine', 'https://betgenuine.com/', 'div.match-card', el => {
-      const match = el.find('.match-title').text() || el.find('.teams').text();
-      const tip = el.find('.bet-type').text() || el.find('.tip').text();
-      return formatTip(match, tip);
-    }),
-
-    scrapeSite('BettingVoice', 'https://bettingvoice.com/', 'div.tip-entry', el => {
-      const match = el.find('.match-info').text() || el.find('.fixture').text();
-      const tip = el.find('.prediction').text() || el.find('.tip').text();
-      return formatTip(match, tip);
-    }),
-
-    scrapeSite('GoodSport', 'https://good-sport.co/', 'div.prediction-item', el => {
-      const match = el.find('.match-title').text() || el.find('.teams').text();
-      const tip = el.find('.bet-type').text() || el.find('.prediction').text();
-      return formatTip(match, tip);
-    }),
-
-    scrapeSite('BankerPredict', 'https://bankerpredict.com/', 'div.tip-container', el => {
-      const match = el.find('.teams').text();
-      const tip = el.find('.tip').text() || el.find('.bet').text();
-      return formatTip(match, tip);
-    }),
-
-    scrapeSite('FocusPredict', 'https://focuspredict.com/', 'div.game-card', el => {
-      const match = el.find('.match-info').text() || el.find('.fixture').text();
-      const tip = el.find('.prediction').text() || el.find('.tip').text();
-      return formatTip(match, tip);
-    }),
-
-    scrapeSite('SupaTips', 'https://www.supatips.com/', 'div.tip-card', el => {
-      const match = el.find('.teams').text();
-      const tip = el.find('.bet-type').text() || el.find('.tip').text();
-      return formatTip(match, tip);
-    })
-  ]);
-}
-
-function findCommonTips(allTips) {
-  const map = {};
-  for (const { source, tips } of allTips) {
-    for (const tip of tips) {
-      if (!map[tip]) map[tip] = { tip, sources: [] };
-      map[tip].sources.push(source);
-    }
-  }
-  return Object.values(map).filter(t => t.sources.length > 1);
-}
-
-async function runBot() {
-  console.log('\n--------------------------------------');
-  console.log('⏱️ Running scraping cycle:', new Date().toLocaleString());
-
-  const allTips = await getAllTips();
-  const repeatedTips = findCommonTips(allTips);
-
-  if (repeatedTips.length === 0) {
-    console.log('⚠️ Hakuna mechi zinazojirudia.');
-    return;
-  }
-
-  for (const item of repeatedTips) {
-    const msg = `*Tip:* ${item.tip}\n*Sources:* ${item.sources.join(', ')}`;
-    await sendTelegramMessage(msg);
-    console.log('✅ Sent:', msg);
-  }
-}
-
-// Start dummy server
-require('http')
-  .createServer((req, res) => res.end('Bot is running'))
-  .listen(process.env.PORT || 3000, () => console.log('🚀 Bot started...'));
-
-// Run every 10 minutes
-setInterval(runBot, 10 * 60 * 1000);
-runBot();
