@@ -8,7 +8,7 @@ const cookies = require("./cookies.json");
 const jar = new tough.CookieJar();
 
 (async () => {
-  for (const cookie of cookies.cookies) {
+  for (const cookie of cookies) {
     await jar.setCookie(`${cookie.name}=${cookie.value}`, "https://www.betpawa.co.tz");
   }
 
