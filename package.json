@@ -1,13 +1,13 @@
 {
   "name": "betpawa-odds-scraper",
   "version": "1.0.0",
-  "description": "Scraper ya odds kutoka BetPawa kwa kutumia cookies",
+  "description": "Scrapes odds from BetPawa using session cookies",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "0.27.2",
     "axios-cookiejar-support": "^1.0.1",
     "tough-cookie": "^4.1.3"
   }
