@@ -1,0 +1,22 @@
+[
+  {
+    "name": "x-pawa-token",
+    "value": "c8206c6dd1f6cdca-9002f4b3ba54fbbf",
+    "domain": ".betpawa.co.tz",
+    "path": "/"
+  },
+  {
+    "name": "__cf_bm",
+    "value": "pdpRSQmaLD7tnluJmTs7uDez_gNHjDCNnrFget_hR6g-1747986371-1.0.1.1-xIfbtalybGdipGuqxP0rG9132NmNQsfzoI28WPPjBPTOjeLVkqtof2oNE1FiTwAO2HhqJBNzWW3_qQhc.5GDzMpPbctmvAhZX4ZXjGbLYxU",
+    "domain": ".www.betpawa.co.tz",
+    "path": "/",
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "tracingId",
+    "value": "72a9a7c0-670f-49e5-a1bc-89e212a03ada",
+    "domain": "www.betpawa.co.tz",
+    "path": "/"
+  }
+]
