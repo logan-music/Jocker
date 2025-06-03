@@ -1,14 +1,18 @@
 {
-  "name": "betpawa-odds-scraper",
+  "name": "betpawa-bot",
   "version": "1.0.0",
-  "description": "Scrapes odds from BetPawa using session cookies",
-  "main": "server.js",
+  "description": "Automated betting bot for BetPawa using Puppeteer and stealth mode",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
-    "axios": "0.27.2",
-    "axios-cookiejar-support": "^1.0.1",
-    "tough-cookie": "^4.1.3"
-  }
+    "puppeteer": "^21.11.0",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.1",
+    "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "author": "Logan",
+  "license": "MIT"
 }
