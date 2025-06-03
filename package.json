@@ -1,18 +1,25 @@
 {
   "name": "betpawa-bot",
-  "version": "1.0.0",
-  "description": "Automated betting bot for BetPawa using Puppeteer and stealth mode",
+  "version": "1.0.1",
+  "description": "Betting bot for BetPawa using Puppeteer Extra and stealth mode",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "puppeteer": "^21.11.0",
-    "puppeteer-extra": "^3.3.4",
-    "puppeteer-extra-plugin-stealth": "^2.11.1",
-    "axios": "^1.6.8",
-    "cheerio": "^1.0.0-rc.12"
+    "puppeteer": "^22.8.2",
+    "puppeteer-extra": "^3.4.3",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "tesseract.js": "^5.0.7"
   },
+  "keywords": [
+    "puppeteer",
+    "stealth",
+    "tesseract",
+    "betting",
+    "bot",
+    "automation"
+  ],
   "author": "Logan",
   "license": "MIT"
 }
