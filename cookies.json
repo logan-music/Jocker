@@ -1,0 +1,41 @@
+[
+  {
+    "domain": ".www.betpawa.co.tz",
+    "expirationDate": 1748980954.14582,
+    "hostOnly": false,
+    "httpOnly": true,
+    "name": "__cf_bm",
+    "path": "/",
+    "sameSite": "no_restriction",
+    "secure": true,
+    "session": false,
+    "storeId": "0",
+    "value": "jx_frp4XpfShJd0z6YS2VhYc5XX3xdCQevB466Do2P0-1748979154-1.0.1.1-oXiLi3KYvIBJ7PmyaZ7LQpAdgtc.Yxscv5dswEQxhbtX3WkQU8vbf8kmHk4CaLuRENt.uwA5xv7yCopdJ_RGG7pbPTRHjXGqvmoyXyVHBQQ"
+  },
+  {
+    "domain": "www.betpawa.co.tz",
+    "expirationDate": 1748997180.7186,
+    "hostOnly": true,
+    "httpOnly": false,
+    "name": "x-pawa-user-uuid",
+    "path": "/",
+    "sameSite": "unspecified",
+    "secure": false,
+    "session": false,
+    "storeId": "0",
+    "value": "c6450e93-bde6-4414-ac9e-339fb89abe7a"
+  },
+  {
+    "domain": "www.betpawa.co.tz",
+    "expirationDate": 1751571180.719979,
+    "hostOnly": true,
+    "httpOnly": false,
+    "name": "x-pawa-token",
+    "path": "/",
+    "sameSite": "unspecified",
+    "secure": false,
+    "session": false,
+    "storeId": "0",
+    "value": "c8206c6dd1f6cdca-d3ce43f9557e4143"
+  }
+]
