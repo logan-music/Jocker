@@ -1,26 +1,40 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
 
-// Load cookies from file
-const cookies = require('./cookies.json');
+puppeteer.use(StealthPlugin());
 
 (async () => {
   const browser = await puppeteer.launch({
-    headless: false, // kwa test, tunataka tuone kila kitu
-    args: ['--start-maximized']
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1366, height: 768 });
 
-  // Apply cookies
-  await page.setCookie(...cookies.cookies);
+  // Load cookies from JSON
+  const cookies = JSON.parse(fs.readFileSync('cookies.json', 'utf8')).cookies;
+  await page.setCookie(...cookies);
 
-  // Open BetPawa homepage
-  await page.goto('https://www.betpawa.co.tz', { waitUntil: 'networkidle2' });
+  // Go to BetPawa
+  await page.goto('https://www.betpawa.co.tz/', {
+    waitUntil: 'networkidle2',
+    timeout: 60000
+  });
 
-  // Angalia kama imeingia vizuri (unaweza kubadili selector)
-  await page.waitForTimeout(5000);
+  // Check login state (adjust selector to confirm you're logged in)
+  try {
+    await page.waitForSelector('.user-balance', { timeout: 10000 });
+    console.log('✅ Logged in successfully.');
+  } catch (err) {
+    console.error('❌ Failed to login. Check cookies.');
+    await browser.close();
+    return;
+  }
 
-  // For now, just stay there
+  // === PLACEHOLDER: Hapa ndo tutaweka logic ya kuchambua mechi na kuweka bet ===
+  console.log('🤖 Ready for match analysis and betting logic...');
+
+  await browser.close();
 })();
