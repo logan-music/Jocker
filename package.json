@@ -1,7 +1,7 @@
 {
-  "name": "betpawa-bot",
+  "name": "betpawa-login-bot",
   "version": "1.0.0",
-  "description": "Bot ya kuingia BetPawa kwa kutumia cookies",
+  "description": "Bot ya ku-login BetPawa kwa kutumia namba ya simu na password na ku-save cookies.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
