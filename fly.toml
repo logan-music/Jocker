@@ -5,5 +5,8 @@ primary_region = "lhr"
 [build]
   dockerfile = "Dockerfile"
 
+[deploy]
+  command = "python main.py"
+
 [env]
   NODE_ENV = "production"
