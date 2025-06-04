@@ -6,7 +6,7 @@ primary_region = "lhr"
   dockerfile = "Dockerfile"
 
 [deploy]
-  command = "python main.py"
+  command = "node index.js"
 
 [env]
   NODE_ENV = "production"
