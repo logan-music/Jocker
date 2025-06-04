@@ -1,6 +1,6 @@
 # fly.toml
 app = "betpawa-bot"
-primary_region = "nbo"
+primary_region = "lhr"
 
 [build]
   dockerfile = "Dockerfile"
