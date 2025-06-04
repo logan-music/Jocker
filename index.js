@@ -6,8 +6,8 @@ const BOT_TOKEN = "7501645118:AAHuL5xMbPY3WZXJVnidijR9gqoyyCS0BzY";
 const CHAT_ID = "6978133426";
 
 // BetPawa login details
-const PHONE_NUMBER = "610172686"; // Bila +255
-const PASSWORD = "YourPasswordHere"; // badilisha hii
+const PHONE_NUMBER = "618306398"; // Bila +255
+const PASSWORD = "na3#"; // badilisha hii
 
 // Helper function: Send message to Telegram
 async function sendTelegramMessage(message) {
